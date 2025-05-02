@@ -1,0 +1,783 @@
+{
+    "description": "A comprehensive database ontology for storing and analyzing transfer RNA (tRNA) data across multiple species.   Note: Core fields that should always be included in query results are gene_symbol (-- SQL path\nJOIN gene_symbol_view gsv ON t.trna_id = gsv.trna_id\n-- To access: gsv.full_gene_symbol), species information (-- SQL path\nJOIN species s ON t.species_id = s.species_id\n-- To access: s.scientific_name, s.common_name). \n Remember, you should never attempt to access fields that are not directly provided, as this will lead to errors and is a bad hallucination. \n Seriously, dont do it. \n\n If you did not recieve enough information, please ask for more details. \n\n This ontology is designed to be extensible and can be adapted to include additional fields or tables as needed in the future. When writing SQL queries, always consider using DISTINCT in your SELECT statement when joining multiple tables, especially with many-to-many relationships, to prevent duplicate rows in the result set.",
+    "entities": {
+        "species": {
+            "table": "species",
+            "description": "Information about biological species studied in tRNA analysis, independent of specific genome assemblies.",
+            "fields": {
+                "species_id": {
+                    "type": "integer", 
+                    "example": "1", 
+                    "isPrimaryKey": true,
+                    "description": "Unique identifier for each species within this database."
+                },
+                "scientific_name": {
+                    "type": "varchar(100)", 
+                    "example": "Homo sapiens",
+                    "description": "Scientific binomial name of the species. This is not the common name."
+                },
+                "common_name": {
+                    "type": "varchar(100)", 
+                    "example": "Human",
+                    "description": "Common or vernacular name of the species, e.g., Human, Mouse, Yeast. This is case sensative, first letter should be capital"
+                }
+            }
+        },
+        "assembly": {
+            "table": "assembly",
+            "description": "Reference genome assemblies for species, allowing multiple versions per species. Each assembly represents a specific version of the reference genome for a species.",
+            "fields": {
+                "assembly_id": {
+                    "type": "integer", 
+                    "example": "1", 
+                    "isPrimaryKey": true,
+                    "description": "Unique identifier for each genome assembly."
+                },
+                "species_id": {
+                    "type": "integer", 
+                    "example": "1", 
+                    "references": "species.species_id",
+                    "description": "Foreign key linking to the species table."
+                },
+                "assembly_name": {
+                    "type": "varchar(50)", 
+                    "example": "GRCh38",
+                    "description": "Name of the genome assembly, typically a standardized identifier."
+                },
+                "assembly_version": {
+                    "type": "varchar(20)", 
+                    "example": "hg38",
+                    "description": "Version or alternative name for the assembly."
+                },
+                "source": {
+                    "type": "varchar(100)", 
+                    "example": "NCBI",
+                    "description": "Source organization or database for the assembly."
+                },
+                "release_date": {
+                    "type": "text", 
+                    "example": "2013-12-17",
+                    "description": "Release date of the assembly."
+                }
+            }
+        },
+        "trna": {
+            "table": "trna",
+            "description": "Primary table containing tRNA gene predictions made by tRNAscan-SE across complete and draft genomes. Each record represents a computationally identified tRNA gene with its genomic location, quality scores, structural features, and functional classification. This table has been improved to connect to assemblies rather than directly to species, allowing for better handling of multiple assemblies per species.",
+            "fields": {
+                "trna_id": {
+                    "type": "integer", 
+                    "example": "1", 
+                    "isPrimaryKey": true,
+                    "description": "Unique identifier for each tRNA record in database, this has no implicit meaning and is meaningless outside of this db."
+                },
+                "assembly_id": {
+                    "type": "integer", 
+                    "example": "1", 
+                    "references": "assembly.assembly_id",
+                    "description": "Foreign key linking to the assembly table, allowing for multiple assemblies per species."
+                },
+                "rnacentral_id": {
+                    "type": "varchar(50)", 
+                    "example": "URS000059D2BF_9606",
+                    "description": "External reference ID from the RNAcentral database for cross-referencing. This is a useful field to give the user, as it enables them to visit the rnacentral page for the trna."
+                },
+                "trnascan_id": {
+                    "type": "varchar(50)", 
+                    "example": "chr10.trna4",
+                    "description": "Original tRNAscan-SE naming convention uses [chromosome].[tRNA number] (e.g., chr10.tRNA4). Here, 'chr10' indicates the chromosome or contig, and 'tRNA4' is the sequential number assigned to each predicted tRNA gene on that chromosome by the tool."
+                },
+                "anticodon": {
+                    "type": "varchar(3)", 
+                    "example": "GTT",
+                    "description": "Codon specific (one codon within an isotype). Three-nucleotide sequence that pairs with the mRNA codon during translation. While the anticodon determines which codon the tRNA recognizes, it should not be used to filter for amino acid type - use isotype field instead."
+                },
+                "isotype": {
+                    "type": "varchar(3)", 
+                    "example": "Asn",
+                    "description": "Amino acid specific (including all cognant codons). Identifies which amino acid is attached to the tRNA (what the tRNA is 'charged with'). This fundamental property determines the tRNA's biological function in protein synthesis."
+                },
+                "score": {
+                    "type": "float", 
+                    "example": "80.9",
+                    "description": "Overall quality score for tRNA prediction from tRNAscan-SE."
+                },
+                "hmm_score": {
+                    "type": "float", 
+                    "example": "55.2",
+                    "description": "Hidden Markov Model score from tRNAscan-SE."
+                },
+                "secondary_structure_score": {
+                    "type": "float", 
+                    "example": "25.7",
+                    "description": "Score evaluating the quality of the secondary structure prediction from tRNAscan-SE."
+                },
+                "is_pseudogene": {
+                    "type": "boolean", 
+                    "example": "0",
+                    "description": "Flag indicating whether this tRNA is likely a non-functional pseudogene."
+                },
+                "has_intron": {
+                    "type": "boolean", 
+                    "example": "0",
+                    "description": "Flag indicating whether this tRNA contains an intron. This is separate and distinct from base modifications."
+                },
+                "has_variants": {
+                    "type": "boolean", 
+                    "example": "0",
+                    "description": "Flag indicating whether this tRNA has associated genetic variants."
+                },
+                "has_modifications": {
+                    "type": "boolean", 
+                    "example": "0",
+                    "description": "Flag indicating whether this tRNA has associated base modifications."
+                },
+                "has_expression_data": {
+                    "type": "boolean", 
+                    "example": "0",
+                    "description": "Flag indicating whether this tRNA has associated expression profiles."
+                }
+            }
+        },
+        "gene_symbol": {
+            "table": "gene_symbol",
+            "description": "Decomposed components of the gene symbol, allowing for more precise searching and filtering on individual parts. The compound gene symbol can still be accessed through the gene_symbol_view, but not here. This table does not contain species data.",
+            "fields": {
+                "trna_id": {
+                    "type": "integer", 
+                    "example": "1", 
+                    "isPrimaryKey": true,
+                    "references": "trna.trna_id",
+                    "description": "Foreign key linking to the tRNA table, also serves as the primary key."
+                },
+                "type": {
+                    "type": "varchar(10)", 
+                    "example": "tRNA",
+                    "description": "The type of RNA, typically 'tRNA' for transfer RNA records."
+                },
+                "isotype": {
+                    "type": "varchar(3)", 
+                    "example": "Glu",
+                    "description": "Three-letter amino acid code representing the isotype of the tRNA."
+                },
+                "transcript_id": {
+                    "type": "integer", 
+                    "example": "3",
+                    "description": "Unique identifier for isodecoders with the same isotype/anticodon."
+                },
+                "locus_id": {
+                    "type": "integer", 
+                    "example": "2",
+                    "description": "Distinguishes identical tRNA gene copies at different genomic locations."
+                }
+            }
+        },
+        "locus": {
+            "table": "locus",
+            "description": "Decomposed components of the genomic locus, allowing for more precise searching and filtering based on genomic coordinates. The compound locus can still be accessed through the locus_view.",
+            "fields": {
+                "trna_id": {
+                    "type": "integer", 
+                    "example": "1", 
+                    "isPrimaryKey": true,
+                    "references": "trna.trna_id",
+                    "description": "Foreign key linking to the tRNA table, also serves as the primary key."
+                },
+                "chromosome": {
+                    "type": "varchar(20)", 
+                    "example": "chr10",
+                    "description": "Chromosome or contig identifier where the tRNA gene is located."
+                },
+                "start_position": {
+                    "type": "integer", 
+                    "example": "22518438",
+                    "description": "Start position of the tRNA gene on the chromosome."
+                },
+                "end_position": {
+                    "type": "integer", 
+                    "example": "22518511",
+                    "description": "End position of the tRNA gene on the chromosome."
+                },
+                "strand": {
+                    "type": "char(1)", 
+                    "example": "-",
+                    "description": "Strand orientation of the gene, either '+' for forward or '-' for reverse."
+                }
+            }
+        },
+        "intron": {
+    "table": "intron",
+    "description": "Details about introns found in tRNA genes. Introns are non-coding sequences that are removed during RNA processing. These are not the same as chemical modifications.",
+    "fields": {
+        "intron_id": {
+            "type": "integer", 
+            "example": "1", 
+            "isPrimaryKey": true,
+            "description": "Unique identifier for each intron record."
+        },
+        "trna_id": {
+            "type": "integer", 
+            "example": "1", 
+            "references": "trna.trna_id",
+            "description": "Foreign key linking to the tRNA containing this intron."
+        },
+        "relative_start": {
+            "type": "integer", 
+            "example": "38",
+            "description": "Start position of the intron relative to the tRNA sequence (1-based numbering)."
+        },
+        "relative_end": {
+            "type": "integer", 
+            "example": "50",
+            "description": "End position of the intron relative to the tRNA sequence (1-based numbering)."
+        },
+        "genomic_start": {
+            "type": "integer", 
+            "example": "22518475",
+            "description": "Start position of the intron in absolute genomic coordinates."
+        },
+        "genomic_end": {
+            "type": "integer", 
+            "example": "22518487",
+            "description": "End position of the intron in absolute genomic coordinates."
+        },
+        "sequence": {
+            "type": "text", 
+            "example": "GTAAGTTAATAG",
+            "description": "Nucleotide sequence of the intron."
+        }
+    }
+},
+        "chemical_modification": {
+            "table": "chemical_modification",
+            "description": "Reference table of known RNA chemical modifications that can occur in tRNAs. This table serves as a catalog of modification types and must be referenced by a modification name from 'modification' table to relate to specific trna's.",
+            "fields": {
+                "id": {
+                    "type": "integer", 
+                    "example": "1", 
+                    "isPrimaryKey": true,
+                    "description": "Unique identifier for each chemical modification."
+                },
+                "name": {
+                    "type": "varchar(100)", 
+                    "example": "(2R,4S)-1-{[(9-deaza-adenin-9-yl)methyl]amino}-2-methyl-4-propylpentan-5-ol",
+                    "description": "Full name of the RNA modification."
+                },
+                "short_name": {
+                    "type": "varchar(50)", 
+                    "example": "pnmm5U",
+                    "description": "Short symbol or abbreviation commonly used to represent the modification."
+                },
+                "rnamod_code_2023": {
+                    "type": "varchar(50)", 
+                    "example": "{",
+                    "description": "Standardized code from RNAMods database (2023 version)."
+                },
+                "modomics_code_new": {
+                    "type": "varchar(50)", 
+                    "example": "200051155iU",
+                    "description": "Current code from MODOMICS database (2023)."
+                },
+                "moiety_type": {
+                    "type": "varchar(50)", 
+                    "example": "nucleotide",
+                    "description": "Classification of the chemical modification type."
+                },
+                "smiles": {
+                    "type": "text", 
+                    "example": "CNCc1c(=O)[nH]c2ncn([C@@H]3O[C@H](CO)[C@@H](O)[C@H]3O)c2n1",
+                    "description": "SMILES notation representing the chemical structure."
+                },
+                "reference_nucleobase": {
+                    "type": "varchar(10)", 
+                    "example": "U",
+                    "description": "Original nucleobase that is modified."
+                },
+                "modomics_code_old": {
+                    "type": "varchar(50)", 
+                    "example": "51155iU",
+                    "description": "Legacy code from older versions of MODOMICS database."
+                },
+                "rnamod_code_old": {
+                    "type": "varchar(50)", 
+                    "example": "{",
+                    "description": "Legacy code from older versions of RNAMods database."
+                },
+                "modomics_db_id": {
+                    "type": "varchar(50)", 
+                    "example": "297",
+                    "description": "Database identifier in the MODOMICS system."
+                }
+            }
+        },
+        "modification": {
+            "table": "modification",
+            "description": "Specific instances of modifications found in particular tRNAs, including  positions. There is no trna_id field here.",
+            "fields": {
+                "modification_id": {
+                    "type": "integer", 
+                    "example": "1", 
+                    "isPrimaryKey": true,
+                    "description": "Unique identifier for each modification instance."
+                },
+                "trna_id": {
+                    "type": "integer", 
+                    "example": "1", 
+                    "references": "trna.trna_id",
+                    "description": "Foreign key linking to the tRNA containing this modification."
+                },
+                "position": {
+                    "type": "varchar(20)", 
+                    "example": "31",
+                    "description": "Position within the tRNA sequence where the modification occurs."
+                },
+                "short_name": {
+                    "type": "varchar(50)", 
+                    "example": "Ψ", 
+                    "description": "Standardized symbol or short name for the modification."
+                },
+                "name": {
+                    "type": "varchar(100)", 
+                    "example": "Ψ31", 
+                    "description": "Original concatenated form of modification symbol with position."
+                },
+                "description": {
+                    "type": "text",
+                    "example": "",
+                    "description": "Optional description or notes about this specific modification instance."
+                }
+            }
+        },
+        "sequence": {
+            "table": "sequence",
+            "description": "Storage for nucleotide sequences and structural information for tRNAs.",
+            "fields": {
+                "trna_id": {
+                    "type": "integer", 
+                    "example": "1", 
+                    "isPrimaryKey": true,
+                    "references": "trna.trna_id",
+                    "description": "Foreign key linking to the tRNA table, also serves as the primary key."
+                },
+                "genomic_sequence": {
+                    "type": "text", 
+                    "example": "GTCTCTGTGGCGCAATCGGTtAGCGCGTTCGGCTGTTAACCGAAAGGtTGGTGGTTCGAGCCCACCCAGGGACG",
+                    "description": "Raw genomic sequence of the predicted tRNA gene (ACTG). This does not include any additional data other than genomic sequence (canonical bases)."
+                },
+                "mature_sequence": {
+                    "type": "text", 
+                    "example": "GUCUCUGUGGCGCAAUCGGUUAGCGCGUUCGGCUGUUAACCGAAAGGUUGGUGGUUCGAGCCCACCCAGGGACG",
+                    "description": "Processed RNA sequence after transcription, containing uracil (U) instead of thymine (T). This is the canonical sequence of the tRNA."
+                },
+                "secondary_structure": {
+                    "type": "text", 
+                    "example": ">>>>>>>..>>>>.........<<<<.>>>>>.......<<<<<.....>>>>>.......<<<<<<<<<<<<.",
+                    "description": "Dot-bracket notation representing the secondary structure folding pattern (>.<)."
+                }
+            }
+        },
+        "variant": {
+    "table": "variant",
+    "description": "Genetic variations (SNPs) found in tRNA genes across different populations.",
+    "fields": {
+        "variant_id": {
+            "type": "integer", 
+            "example": "1", 
+            "isPrimaryKey": true,
+            "description": "Unique identifier for each variant within the database."
+        },
+        "trna_id": {
+            "type": "integer", 
+            "example": "1", 
+            "references": "trna.trna_id",
+            "description": "Foreign key linking to the affected tRNA."
+        },
+        "trna_position": {
+            "type": "varchar(50)", 
+            "example": "34",
+            "description": "Relative position of this SNP variant within the tRNA molecule (1-based numbering)."
+        },
+        "genomic_position": {
+            "type": "varchar(100)", 
+            "example": "chr10:22518471",
+            "description": "Absolute genomic coordinate of this SNP variant (chromosome:position)."
+        },
+        "dbsnp_id": {
+            "type": "varchar(20)", 
+            "example": "rs12345",
+            "references": "dbsnp.refsnp_id",
+            "description": "Reference SNP ID from dbSNP database, used as a foreign key to link to extended dbSNP information in 'dbsnp' table."
+        },
+        "ref_allele": {
+            "type": "varchar(10)", 
+            "example": "A",
+            "description": "Reference nucleotide at this position."
+        },
+        "alt_allele": {
+            "type": "varchar(10)", 
+            "example": "G",
+            "description": "Alternative nucleotide(s) observed at this position."
+        },
+        "is_common": {
+            "type": "boolean", 
+            "example": "1",
+            "description": "Flag indicating whether this is a common variant in the population."
+        },
+        "in_1k_genome": {
+            "type": "boolean", 
+            "example": "1",
+            "description": "Flag indicating whether this variant is present in the 1000 Genomes Project."
+        },
+        "effect": {
+            "type": "varchar(100)", 
+            "example": "Anticodon change",
+            "description": "Predicted functional impact of the variant on tRNA function."
+        }
+    }
+        },
+        "image": {
+            "table": "image",
+            "description": "Visual representations of tRNA structures and other graphical elements.",
+            "fields": {
+                "image_id": {
+                    "type": "integer", 
+                    "example": "1", 
+                    "isPrimaryKey": true,
+                    "description": "Unique identifier for each image."
+                },
+                "trna_id": {
+                    "type": "integer", 
+                    "example": "1", 
+                    "references": "trna.trna_id",
+                    "description": "Foreign key linking to the tRNA being visualized."
+                },
+                "type": {
+                    "type": "varchar(50)", 
+                    "example": "secondary_structure",
+                    "description": "Type of visual representation (e.g., secondary structure, tertiary structure)."
+                },
+                "path": {
+                    "type": "varchar(255)", 
+                    "example": "/images/trna/1_structure.png",
+                    "description": "File system path or URL to the image file."
+                }
+            }
+        },
+        "expression_profile": {
+            "table": "expression_profile",
+            "description": "Expression data and visualizations showing tRNA abundance across tissues or conditions.",
+            "fields": {
+                "profile_id": {
+                    "type": "integer", 
+                    "example": "1", 
+                    "isPrimaryKey": true,
+                    "description": "Unique identifier for each expression profile."
+                },
+                "trna_id": {
+                    "type": "integer", 
+                    "example": "1", 
+                    "references": "trna.trna_id",
+                    "description": "Foreign key linking to the tRNA being profiled."
+                },
+                "heading": {
+                    "type": "varchar(255)", 
+                    "example": "Brain expression",
+                    "description": "Title or description of the expression profile."
+                },
+                "link": {
+                    "type": "varchar(255)", 
+                    "example": "https://example.com/expression/1",
+                    "description": "URL to detailed expression data or external resource."
+                },
+                "image_path": {
+                    "type": "varchar(255)", 
+                    "example": "/images/expression/1.png",
+                    "description": "File system path or URL to the expression visualization image."
+                },
+                "tissue_type": {
+                    "type": "varchar(100)", 
+                    "example": "Brain",
+                    "description": "Type of tissue or cell where expression was measured."
+                },
+                "expression_level": {
+                    "type": "varchar(50)", 
+                    "example": "High",
+                    "description": "Qualitative or quantitative measure of expression."
+                }
+            }
+        },
+        "alignment_group": {
+            "table": "alignment_group",
+            "description": "Groups representing distinct tRNA alignment patterns based on structural similarity. These serve as the foundation for comparative analysis across tRNAs.",
+            "fields": {
+                "alignment_id": {
+                    "type": "integer", 
+                    "example": "1", 
+                    "isPrimaryKey": true,
+                    "description": "Unique identifier for each alignment group."
+                },
+                "consensus_structure": {
+                    "type": "text",
+                    "example": ">>>>>>>..>>>>.........<<<<.>>>>>.......<<<<<.....",
+                    "description": "Dot-bracket notation of the consensus structure for this alignment group."
+                },
+                "cove_score": {
+                    "type": "float",
+                    "example": "95.7",
+                    "description": "Covariance model score indicating the quality of the alignment pattern."
+                }
+            }
+        },
+        "trna_alignment_mapping": {
+            "table": "trna_alignment_mapping",
+            "description": "Junction table establishing many-to-many relationships between tRNAs and alignment groups. This enables grouping of structurally similar tRNAs across different species or within a species.",
+            "fields": {
+                "trna_id": {
+                    "type": "integer",
+                    "example": "1",
+                    "references": "trna.trna_id",
+                    "description": "Foreign key linking to the specific tRNA.",
+                    "isPrimaryKey": true
+                },
+                "alignment_id": {
+                    "type": "integer",
+                    "example": "1",
+                    "references": "alignment_group.alignment_id",
+                    "description": "Foreign key linking to the alignment group.",
+                    "isPrimaryKey": true
+                }
+            }
+        },
+        "gene_symbol_view": {
+            "table": "gene_symbol_view",
+            "description": "View that reconstructs the compound gene symbol from its components for easy querying.",
+            "fields": {
+                "trna_id": {
+                    "type": "integer", 
+                    "example": "1",
+                    "description": "Foreign key linking to the tRNA table."
+                },
+                "rnacentral_id": {
+                    "type": "varchar(50)", 
+                    "example": "URS000059D2BF_9606",
+                    "description": "External reference ID from the RNAcentral database."
+                },
+                "full_gene_symbol": {
+                    "type": "text", 
+                    "example": "tRNA-Glu-AUG-3-2",
+                    "description": "Reconstructed gene symbol in format [prefix]-[isotype]-[anticodon]-[transcript ID]-[locus ID]."
+                },
+                "type": {
+                    "type": "varchar(10)", 
+                    "example": "tRNA",
+                    "description": "The type of RNA, typically 'tRNA' for transfer RNA records."
+                },
+                "isotype": {
+                    "type": "varchar(3)", 
+                    "example": "Glu",
+                    "description": "Three-letter amino acid code."
+                },
+                "transcript_id": {
+                    "type": "integer", 
+                    "example": "3",
+                    "description": "Identifier for isodecoders with the same isotype/anticodon."
+                },
+                "locus_id": {
+                    "type": "integer", 
+                    "example": "2",
+                    "description": "Distinguishes identical tRNA gene copies at different locations."
+                }
+            }
+        },
+        "locus_view": {
+            "table": "locus_view",
+            "description": "View that reconstructs the compound locus from its components for easy querying.",
+            "fields": {
+                "trna_id": {
+                    "type": "integer", 
+                    "example": "1",
+                    "description": "Foreign key linking to the tRNA table."
+                },
+                "rnacentral_id": {
+                    "type": "varchar(50)", 
+                    "example": "URS000059D2BF_9606",
+                    "description": "External reference ID from the RNAcentral database."
+                },
+                "full_locus": {
+                    "type": "text", 
+                    "example": "chr10:22518438-22518511 (-)",
+                    "description": "Reconstructed locus in format [chromosome]:[start]-[end] ([strand])."
+                },
+                "chromosome": {
+                    "type": "varchar(20)", 
+                    "example": "chr10",
+                    "description": "Chromosome or contig identifier."
+                },
+                "start_position": {
+                    "type": "integer", 
+                    "example": "22518438",
+                    "description": "Start coord on the chromosome."
+                },
+                "end_position": {
+                    "type": "integer", 
+                    "example": "22518511",
+                    "description": "End coord on the chromosome."
+                },
+                "strand": {
+                    "type": "char(1)", 
+                    "example": "-",
+                    "description": "Strand orientation, either '+' or '-'."
+                }
+            }
+        }
+        
+    },
+    
+    "relationships":[
+        {
+            "from": "species",
+            "to": "trna",
+            "path": "species.species_id -> trna.species_id",
+            "sql": "-- SQL path\nJOIN species s ON t.species_id = s.species_id\n-- To access: s.scientific_name, s.common_name, s.genome_assembly",
+            "cardinality": "one-to-many",
+            "description": "Each species can have multiple tRNA genes, but each tRNA belongs to exactly one species."
+        },
+        {
+            "from": "trna",
+            "to": "gene_symbol",
+            "path": "trna.trna_id -> gene_symbol.trna_id",
+            "sql": "JOIN gene_symbol gs ON t.trna_id = gs.trna_id",
+            "cardinality": "one-to-one",
+            "description": "Each tRNA has exactly one gene symbol record."
+        },
+        {
+            "from": "trna",
+            "to": "locus",
+            "path": "trna.trna_id -> locus.trna_id",
+            "sql": "JOIN locus l ON t.trna_id = l.trna_id",
+            "cardinality": "one-to-one",
+            "description": "Each tRNA has exactly one locus record."
+        },
+        {
+            "from": "trna",
+            "to": "sequence",
+            "path": "trna.trna_id -> sequence.trna_id",
+            "sql": "JOIN sequence seq ON t.trna_id = seq.trna_id",
+            "cardinality": "one-to-one",
+            "description": "Each tRNA has exactly one associated sequence record."
+        },
+        {
+            "from": "trna",
+            "to": "intron",
+            "path": "trna.trna_id -> intron.trna_id",
+            "sql": "JOIN intron i ON t.trna_id = i.trna_id",
+            "cardinality": "one-to-many",
+            "description": "A tRNA can have multiple introns, though most have zero or one."
+        },
+        {
+            "from": "trna",
+            "to": "modification",
+            "path": "trna.trna_id -> trna_modification_association.trna_id -> trna_modification_association.modification_id -> modification.modification_id",
+            "sql": "-- SQL path\nJOIN trna_modification_association tma ON t.trna_id = tma.trna_id\nJOIN modification mod ON tma.modification_id = mod.modification_id\n-- To access: mod.name, mod.short_name",
+            "cardinality": "many-to-many",
+            "description": "Each tRNA can have multiple modifications, and each modification can be present in multiple tRNAs. This relationship is managed through the trna_modification_association junction table."
+        },
+        {
+            "from": "chemical_modification",
+            "to": "modification",
+            "path": "chemical_modification.short_name -> modification.short_name",
+            "sql": "-- SQL path\nJOIN chemical_modification cm ON mod.short_name = cm.short_name\n-- To access: cm.name, cm.moiety_type, cm.smiles",
+            "cardinality": "one-to-many",
+            "description": "Each chemical modification type can be found in multiple tRNAs at different positions. The relationship uses the standardized short_name rather than a key."
+        },
+        {
+            "from": "trna",
+            "to": "variant",
+            "path": "trna.trna_id -> variant.trna_id",
+            "sql": "JOIN variant v ON t.trna_id = v.trna_id",
+            "cardinality": "one-to-many",
+            "description": "Each tRNA can have multiple genetic variants."
+        },
+        {
+            "from": "trna",
+            "to": "image",
+            "path": "trna.trna_id -> image.trna_id",
+            "sql": "JOIN image img ON t.trna_id = img.trna_id",
+            "cardinality": "one-to-many",
+            "description": "Each tRNA can have multiple visual representations."
+        },
+        {
+            "from": "trna",
+            "to": "expression_profile",
+            "path": "trna.trna_id -> expression_profile.trna_id",
+            "sql": "JOIN expression_profile ep ON t.trna_id = ep.trna_id",
+            "cardinality": "one-to-many",
+            "description": "Each tRNA can have multiple expression profiles across different tissues or conditions."
+        },
+        {
+            "from": "trna",
+            "to": "trna_alignment_mapping",
+            "path": "trna.trna_id -> trna_alignment_mapping.trna_id",
+            "sql": "JOIN trna_alignment_mapping tam ON t.trna_id = tam.trna_id",
+            "cardinality": "one-to-many",
+            "description": "Each tRNA can be included in multiple alignment groups."
+        },
+        {
+            "from": "alignment_group",
+            "to": "trna_alignment_mapping",
+            "path": "alignment_group.alignment_id -> trna_alignment_mapping.alignment_id",
+            "sql": "JOIN trna_alignment_mapping tam ON ag.alignment_id = tam.alignment_id",
+            "cardinality": "one-to-many",
+            "description": "Each alignment group contains multiple individual tRNAs."
+        },
+        {
+            "from": "variant",
+            "to": "dbsnp",
+            "path": "variant.dbsnp_id -> dbsnp.refsnp_id",
+            "sql": "JOIN dbsnp d ON REPLACE(v.dbsnp_id, 'rs', '') = d.refsnp_id",
+            "cardinality": "many-to-one",
+            "description": "Each variant with a dbSNP ID links to a record in the dbSNP table. The 'rs' prefix is removed for matching."
+        },
+        {
+            "from": "dbsnp",
+            "to": "dbsnp_merge",
+            "path": "dbsnp.refsnp_id -> dbsnp_merge.snp_id",
+            "sql": "JOIN dbsnp_merge dm ON d.refsnp_id = dm.snp_id",
+            "cardinality": "one-to-many",
+            "description": "Each dbSNP record can have multiple merge history entries."
+        },
+        {
+            "from": "modification",
+            "to": "trna",
+            "path": "modification.modification_id -> trna_modification_association.modification_id -> trna_modification_association.trna_id -> trna.trna_id",
+            "sql": "--",
+            "cardinality": "many-to-many",
+            "description": "Each modification can be found in multiple tRNAs, and the relationship is managed through the trna_modification_association junction table."
+        },
+        {
+            "from": "gene_symbol",
+            "to": "gene_symbol_view",
+            "path": "gene_symbol.trna_id -> gene_symbol_view.trna_id",
+            "sql": "-- SQL path\nJOIN gene_symbol_view gsv ON gs.trna_id = gsv.trna_id\n-- To access: gsv.full_gene_symbol",
+            "cardinality": "one-to-one",
+            "description": "Each gene symbol record has a representation in the gene_symbol_view."
+        },
+        {
+            "from": "locus",
+            "to": "locus_view",
+            "path": "locus.trna_id -> locus_view.trna_id",
+            "sql": "-- SQL path\nJOIN locus_view lv ON l.trna_id = lv.trna_id\n-- To access: lv.full_locus",
+            "cardinality": "one-to-one",
+            "description": "Each locus record has a representation in the locus_view."
+        },
+        {
+            "from": "trna",
+            "to": "trna_complete",
+            "path": "trna.trna_id -> trna_complete.trna_id",
+            "sql": "-- SQL path\nJOIN trna_complete tc ON t.trna_id = tc.trna_id\n-- To access: tc.gene_symbol, tc.locus, tc.scientific_name",
+            "cardinality": "one-to-one",
+            "description": "Each tRNA record has a complete representation in the trna_complete view, which aggregates information from multiple tables."
+        }
+    ]
+}
+
