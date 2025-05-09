@@ -8,7 +8,7 @@ services:
       dockerfile: Dockerfile
     container_name: trna-service
     ports:
-      - "7860:7860"  # Only expose the Gradio UI port
+      - "11860:7860"  # Map container port 7860 to host port 11860
     volumes:
       - /data/scratch/larbales/trna-data:/data  # Application data
       - /data/scratch/larbales/ollama-data:/root/.ollama  # Ollama models persistent storage
