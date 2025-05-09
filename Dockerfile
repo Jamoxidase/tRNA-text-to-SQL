@@ -49,8 +49,8 @@ done\n\
 # Pull the model if not already downloaded\n\
 ollama pull cas/ministral-8b-instruct-2410_q4km\n\
 \n\
-# Start the application with binding to all interfaces\n\
-python gradio_ui.py --server-name=0.0.0.0\n\
+# Start the application (binding to all interfaces configured in the code)\n\
+python gradio_ui.py\n\
 \n\
 # If Python app exits, kill Ollama\n\
 kill $OLLAMA_PID\n\

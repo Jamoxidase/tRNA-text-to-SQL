@@ -1444,4 +1444,4 @@ if __name__ == "__main__":
         check_message_log(args.log_limit)
     else:
         # Launch the Gradio app
-        app.launch()#share=True)
+        app.launch(server_name="0.0.0.0")#share=True)
