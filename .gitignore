@@ -40,16 +40,5 @@ env/
 *.log
 logs/
 
-# Database files
-*.db
-*.sqlite3
-
-
-# Index files
-*_index_v*.json
-
 # Mac OS specific files
 .DS_Store
-
-# Jupyter Notebook
-.ipynb_checkpoints

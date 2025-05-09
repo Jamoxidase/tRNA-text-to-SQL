@@ -530,7 +530,7 @@
         },
         "trna_alignment_mapping": {
             "table": "trna_alignment_mapping",
-            "description": "Junction table establishing many-to-many relationships between tRNAs and alignment groups. This enables grouping of structurally similar tRNAs across different species or within a species.",
+            "description": "Junction table establishing many-to-many relationships between tRNAs and alignment groups. This enables grouping of structurally similar tRNAs across different species or within a species. We have trna_id field and alignment_id field. alignment_id ",
             "fields": {
                 "trna_id": {
                     "type": "integer",
