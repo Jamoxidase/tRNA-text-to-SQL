@@ -21,6 +21,7 @@ COPY *.py .
 COPY *.json .
 COPY *.md .
 COPY *.db* ./
+COPY .env ./
 
 # Expose the port for Gradio UI
 EXPOSE 7860
