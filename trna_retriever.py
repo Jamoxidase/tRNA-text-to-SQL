@@ -688,25 +688,37 @@ class AsyncTRNARetriever:
         current_segment = ""
         in_sql_block = False
         lines = full_response.split("\n")
-        
-        for i, line in enumerate(lines):
-            if line.startswith("```sql"):
-                # End of a non-SQL segment, start of an SQL block
-                if current_segment.strip():
-                    segments.append({"type": "comment", "content": current_segment.strip()})
-                in_sql_block = True
-                current_segment = ""
-            elif line.startswith("```") and in_sql_block:
-                # End of an SQL block
-                segments.append({"type": "sql", "content": current_segment.strip()})
-                in_sql_block = False
-                current_segment = ""
-            else:
-                # Content for the current segment
-                if in_sql_block and not line.startswith("```sql"):
-                    current_segment += line + "\n"
-                elif not in_sql_block:
-                    current_segment += line + "\n"
+
+        # Special handling for Ollama output that often starts with " sql" instead of "```sql"
+        if not full_response.startswith("```") and full_response.lstrip().startswith("sql") and "```" in full_response:
+            # Extract SQL directly from Ollama format
+            sql_part = full_response.strip()
+            if sql_part.startswith("sql"):
+                sql_part = sql_part[3:].strip()  # Remove "sql" prefix
+            # Find where SQL ends (at ```)
+            if "```" in sql_part:
+                sql_part = sql_part.split("```")[0].strip()
+            segments.append({"type": "sql", "content": sql_part})
+        else:
+            # Standard processing for markdown-formatted responses
+            for i, line in enumerate(lines):
+                if line.startswith("```sql") or (line.strip() == "sql" and i == 0):
+                    # End of a non-SQL segment, start of an SQL block
+                    if current_segment.strip():
+                        segments.append({"type": "comment", "content": current_segment.strip()})
+                    in_sql_block = True
+                    current_segment = ""
+                elif line.startswith("```") and in_sql_block:
+                    # End of an SQL block
+                    segments.append({"type": "sql", "content": current_segment.strip()})
+                    in_sql_block = False
+                    current_segment = ""
+                else:
+                    # Content for the current segment
+                    if in_sql_block and not line.startswith("```sql"):
+                        current_segment += line + "\n"
+                    elif not in_sql_block:
+                        current_segment += line + "\n"
         
         # Add the last segment if it exists
         if current_segment.strip():
@@ -723,10 +735,16 @@ class AsyncTRNARetriever:
         # Store the full comments (trim extra newlines)
         if full_comments.strip():
             comments.append(full_comments.strip())
-            
+
         # Add extracted components to the response
         response["sql_blocks"] = sql_blocks
         response["comments"] = comments
+
+        # Log extracted SQL blocks
+        if sql_blocks:
+            logging.info(f"Extracted {len(sql_blocks)} SQL blocks. First block: {sql_blocks[0][:100]}...")
+        else:
+            logging.info(f"No SQL blocks extracted from response.")
         
         return response
 
