@@ -32,7 +32,6 @@ VOLUME /data
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
-ENV LLM_PROVIDER=ollama
 ENV OLLAMA_BASE_URL=http://localhost:11434
 
 # Create startup script

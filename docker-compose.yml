@@ -13,6 +13,5 @@ services:
       - /data/scratch/larbales/trna-data:/data  # Application data
       - /data/scratch/larbales/ollama-data:/root/.ollama  # Ollama models persistent storage
     environment:
-      - LLM_PROVIDER=ollama
       - OLLAMA_BASE_URL=http://localhost:11434
     restart: unless-stopped

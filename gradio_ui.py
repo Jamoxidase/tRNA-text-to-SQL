@@ -154,18 +154,15 @@ class TRNARetrieverUI:
     
     def process_query(
         self,
-        query_text: str,
-        models: List[str],
+        query_text: str, 
+        models: List[str], 
         include_ontology: bool,
         compare_with_without_ontology: bool,
         execute_query: bool,
         top_k: int,
         embedding_file: str,
         ontology_file: str,
-        db_path: str,
-        llm_provider: str = "ollama",
-        ollama_url: str = "http://localhost:11434",
-        ollama_model: str = "cas/ministral-8b-instruct-2410_q4km"
+        db_path: str
     ) -> Tuple[str, Dict, list, str]:
         """
         Process a query and return formatted results.
@@ -201,20 +198,6 @@ class TRNARetrieverUI:
         if not ontology_file:
             ontology_file = "trnadb_ontology_v01.json"  # Default
         
-        # Set environment variables for LLM provider
-        if llm_provider:
-            os.environ["LLM_PROVIDER"] = llm_provider
-        if ollama_url:
-            os.environ["OLLAMA_BASE_URL"] = ollama_url
-
-        # If using ollama:custom, replace it with the actual model name
-        if "ollama:custom" in models and ollama_model:
-            # Find and replace "ollama:custom" with the actual ollama model name
-            for i, model in enumerate(models):
-                if model == "ollama:custom":
-                    models[i] = f"ollama:{ollama_model}"
-                    logging.info(f"Using Ollama model: {ollama_model}")
-
         # Run the query through the API
         try:
             results = run_async(query_api(
@@ -1275,7 +1258,7 @@ with gr.Blocks(css=css, title="tRNA Ontology Retriever") as app:
                 model_dropdown = gr.Dropdown(
                     choices=AVAILABLE_MODELS,
                     label="Select Models",
-                    value=["ollama:custom"],  # Using Ollama as default model
+                    value=["openai-gpt-4"],  # Using GPT-4 as default model
                     multiselect=True,
                     scale=1
                 )
@@ -1307,38 +1290,18 @@ with gr.Blocks(css=css, title="tRNA Ontology Retriever") as app:
                 with gr.Accordion("Advanced Options", open=False):
                     with gr.Row():
                         embedding_file = gr.Textbox(
-                            label="Embedding File",
+                            label="Embedding File", 
                             value="trna_index_v01.json"
                         )
                         ontology_file = gr.Textbox(
-                            label="Ontology File",
+                            label="Ontology File", 
                             value="trnadb_ontology_v01.json"
                         )
                         db_path = gr.Textbox(
-                            label="Database Path",
-                            value="trna_db_v01.db",
+                            label="Database Path", 
+                            value="trna_db_v01.db", 
                         )
-
-                    with gr.Row():
-                        llm_provider = gr.Radio(
-                            label="LLM Provider",
-                            choices=["litellm", "ollama"],
-                            value="ollama",
-                            info="Select which LLM provider to use"
-                        )
-                        ollama_url = gr.Textbox(
-                            label="Ollama URL",
-                            value="http://localhost:11434",
-                            info="URL for Ollama server (if using Ollama provider)"
-                        )
-
-                    with gr.Row():
-                        ollama_model = gr.Textbox(
-                            label="Ollama Model Name",
-                            value="mistral-openorca",
-                            info="Specify which Ollama model to use (must be installed via 'ollama pull <model>')"
-                        )
-
+                
                 submit_btn = gr.Button(
                     "Process Query", 
                     variant="primary",
@@ -1368,8 +1331,7 @@ with gr.Blocks(css=css, title="tRNA Ontology Retriever") as app:
         fn=ui_handler.process_query,
         inputs=[
             query_input, model_dropdown, include_ontology, compare_with_without_ontology,
-            execute_query, top_k, embedding_file, ontology_file, db_path,
-            llm_provider, ollama_url, ollama_model
+            execute_query, top_k, embedding_file, ontology_file, db_path
         ],
         outputs=[
             results_output, json_output, table_container, model_results_html

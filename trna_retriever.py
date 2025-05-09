@@ -10,7 +10,7 @@ import numpy as np
 import logging
 import asyncio
 import time
-import os
+import os        
 import aiosqlite
 from datetime import datetime
 from typing import List, Dict, Any, Tuple, Optional, Union
@@ -18,19 +18,19 @@ import voyageai
 import httpx
 from dotenv import load_dotenv
 
-# LLM configuration
+# LiteLLM configuration
 load_dotenv()
 LITELLM_API_KEY = os.getenv('LITELLM_API_KEY')
 LITELLM_BASE_URL = os.getenv('LITELLM_BASE_URL')
-OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
-LLM_PROVIDER = os.getenv('LLM_PROVIDER', 'ollama')  # Options: 'litellm', 'ollama'
 
 # Database configuration
 DB_PATH = os.getenv('TRNA_DB_PATH', 'trna_db_v01.db')
 
+# Ollama configuration
+OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
+
 # Available models
 AVAILABLE_MODELS = [
-    # LiteLLM models
     "claude-3-5-sonnet",
     "claude-3-5-haiku",
     "openai-gpt-3.5",
@@ -42,8 +42,8 @@ AVAILABLE_MODELS = [
     "flash-2",
     "sonar",
     "Ministral-8b",
-    # Ollama model - generic entry, specify actual model in UI
-    "ollama:custom"
+    # Ollama model
+    "ollama:mistral-openorca"
 ]
 
 def cosine_similarity(a, b):
@@ -601,7 +601,7 @@ class AsyncTRNARetriever:
                        include_ontology: bool = True) -> Dict[str, Any]:
         """
         Query an LLM model with the given prompt.
-        Supports both LiteLLM proxy and Ollama.
+        Uses direct access to the LiteLLM proxy or Ollama API depending on the model name.
 
         Args:
             model_name: Name of the LLM model to use
@@ -612,16 +612,15 @@ class AsyncTRNARetriever:
             Response from the LLM with extracted components
         """
         start_time = time.time()
-        full_response = ""
-
-        # Check if this is an Ollama model
-        is_ollama = model_name.startswith("ollama:")
-        actual_model = model_name.replace("ollama:", "") if is_ollama else model_name
 
         try:
-            # Use either Ollama API or LiteLLM proxy based on model name or environment variable
-            if is_ollama or LLM_PROVIDER == 'ollama':
-                # Ollama API (http://localhost:11434/api/generate by default)
+            # Check if this is an Ollama model
+            is_ollama = model_name.startswith("ollama:")
+            actual_model = model_name.replace("ollama:", "") if is_ollama else model_name
+
+            if is_ollama:
+                # Use Ollama API
+                logging.info(f"Using Ollama API for model: {actual_model}")
                 async with httpx.AsyncClient() as client:
                     response = await client.post(
                         f"{OLLAMA_BASE_URL}/api/generate",
@@ -630,21 +629,18 @@ class AsyncTRNARetriever:
                             "prompt": prompt,
                             "stream": False,
                             "options": {
-                                "temperature": 0.2,
-                                "num_predict": 2000  # Roughly equivalent to max_tokens in OpenAI API
+                                "temperature": 0.2
                             }
                         },
-                        timeout=120.0  # Longer timeout for Ollama models
+                        timeout=120.0  # Longer timeout for Ollama
                     )
 
                     result = response.json()
                     full_response = result.get("response", "")
-
-                    # Log Ollama response details for debugging
-                    logging.info(f"Ollama response for model {actual_model}, length: {len(full_response)}")
-
+                    logging.info(f"Ollama API response received, length: {len(full_response)}")
             else:
-                # Direct access to LiteLLM proxy
+                # Direct access to LiteLLM proxy (existing behavior)
+                logging.info(f"Using LiteLLM proxy for model: {model_name}")
                 async with httpx.AsyncClient() as client:
                     response = await client.post(
                         f"{LITELLM_BASE_URL}/v1/completions",
@@ -958,15 +954,13 @@ class AsyncTRNARetriever:
 
 async def query_api(
     query_text: str,
-    models: List[str] = None,
+    models: List[str] = None,  
     trials: List[Dict[str, Any]] = None,
     execute_query: bool = True,
     k: int = 5,
     embedding_file: str = "trna_index_v01.json",
     ontology_file: str = "trnadb_ontology_v01.json",
-    db_path: str = None,
-    llm_provider: str = None,
-    ollama_url: str = None
+    db_path: str = None
 ) -> Dict[str, Any]:
     """
     Main API function to process a tRNA query.
@@ -1006,23 +1000,12 @@ async def query_api(
     if not trials:
         trials = [{"name": "default", "include_ontology": True}]
     
-    # Override global paths and configs if specified
+    # Override DB_PATH if specified
     if db_path:
         global DB_PATH
         original_db_path = DB_PATH
         DB_PATH = db_path
         logging.info(f"Overriding default DB path: {original_db_path} -> {DB_PATH}")
-
-    # Override LLM configuration if provided
-    if llm_provider:
-        global LLM_PROVIDER
-        LLM_PROVIDER = llm_provider
-        logging.info(f"Using LLM provider: {LLM_PROVIDER}")
-
-    if ollama_url:
-        global OLLAMA_BASE_URL
-        OLLAMA_BASE_URL = ollama_url
-        logging.info(f"Using Ollama URL: {OLLAMA_BASE_URL}")
     
     # Check if necessary files exist
     for file_path, file_type in [(embedding_file, "embedding file"), (ontology_file, "ontology file"), (DB_PATH, "database file")]:

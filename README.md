@@ -32,7 +32,7 @@ A natural language interface for querying tRNA databases using LLMs. This system
 
 4. Access the web interface at:
    ```
-   http://<server-ip>:7860
+   http://<server-ip>:11860
    ```
 
 5. The first startup may take several minutes as the Ollama model is downloaded.
@@ -41,13 +41,25 @@ A natural language interface for querying tRNA databases using LLMs. This system
 
 - **All-in-one container**: Runs both the tRNA Ontology Retriever and Ollama in a single container
 - **Persistent storage**: Maintains model files and data across container restarts
-- **Pre-configured model**: Uses `cas/ministral-8b-instruct-2410_q4km` by default
+- **Pre-configured model**: Uses `mistral-openorca` by default
+- **Network access**: Binds to all interfaces (0.0.0.0), making it accessible via SSH tunneling
+
+### SSH Tunnel Access
+
+If you're running this on a remote server, you can access it via SSH tunneling:
+
+```bash
+ssh -L 11860:localhost:11860 username@remote-server
+```
+
+Then access the interface at http://localhost:11860 in your local browser.
 
 ### Troubleshooting Docker Setup
 
 - **Container fails to start**: Check Docker logs with `docker logs trna-service`
 - **Model not loading**: Ensure there's enough disk space and memory
-- **Query times out**: Large models may need more time for the first query, try again
+- **Query times out**: The model (mistral-openorca) may need more time for the first query, try again
+- **Cannot connect via SSH tunnel**: Ensure the application is binding to 0.0.0.0 and that your SSH tunnel command is correct
 
 ## Local Setup
 
@@ -106,8 +118,17 @@ TRNA_DB_PATH=trna_db_v01.db
 ## System Architecture
 
 - **Embeddings**: Generated using the Voyage AI API (external service)
-- **LLM Inference**: Performed using Ollama locally within the container
+- **LLM Inference**: Can be performed via:
+  - Remote LLMs via LiteLLM proxy (claude-3-5-sonnet, openai-gpt-4, etc.)
+  - Local LLMs using Ollama (ollama:mistral-openorca)
 - **Database**: Local SQLite database for tRNA data storage and querying
+
+### Using Ollama Models
+
+To use the Ollama-based model:
+1. Select "ollama:mistral-openorca" from the model dropdown in the UI
+2. The system will automatically route the request to the Ollama API instead of LiteLLM
+3. The Docker container comes with Ollama pre-installed and the mistral-openorca model pre-loaded
 
 ## Performance Considerations
 
