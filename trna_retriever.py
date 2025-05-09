@@ -736,6 +736,20 @@ class AsyncTRNARetriever:
         if full_comments.strip():
             comments.append(full_comments.strip())
 
+        # Fallback: If no SQL blocks were found but the response looks like SQL, use entire response as SQL
+        if not sql_blocks:
+            logging.info(f"No SQL blocks extracted with standard parsing, checking for raw SQL")
+
+            # Check if the response starts with common SQL keywords
+            first_word = full_response.strip().split(' ')[0].upper() if full_response.strip() else ""
+            sql_keywords = ["SELECT", "WITH", "INSERT", "UPDATE", "DELETE", "CREATE", "ALTER", "DROP"]
+
+            if first_word in sql_keywords:
+                logging.info(f"Response looks like raw SQL, using entire response as SQL block")
+                sql_blocks = [full_response.strip()]
+                # Don't add to comments since it's all SQL
+                comments = []
+
         # Add extracted components to the response
         response["sql_blocks"] = sql_blocks
         response["comments"] = comments
