@@ -637,7 +637,10 @@ class AsyncTRNARetriever:
 
                     result = response.json()
                     full_response = result.get("response", "")
+
+                    # Log full response for debugging
                     logging.info(f"Ollama API response received, length: {len(full_response)}")
+                    logging.info(f"Ollama full response: {full_response}")
             else:
                 # Direct access to LiteLLM proxy (existing behavior)
                 logging.info(f"Using LiteLLM proxy for model: {model_name}")
@@ -656,6 +659,10 @@ class AsyncTRNARetriever:
 
                     result = response.json()
                     full_response = result.get("choices", [{}])[0].get("text", "")
+
+                    # Log full response for debugging (same as with Ollama)
+                    logging.info(f"LiteLLM API response received, length: {len(full_response)}")
+                    logging.info(f"LiteLLM full response: {full_response}")
 
         except Exception as e:
             logging.error(f"Error querying model {model_name}: {str(e)}")
