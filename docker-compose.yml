@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  # Combined Ollama and tRNA UI in a single container
+  trna-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: trna-service
+    ports:
+      - "7860:7860"  # Only expose the Gradio UI port
+    volumes:
+      - /data/scratch/larbales/trna-data:/data  # Application data
+      - /data/scratch/larbales/ollama-data:/root/.ollama  # Ollama models persistent storage
+    environment:
+      - LLM_PROVIDER=ollama
+      - OLLAMA_BASE_URL=http://localhost:11434
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 60G    # ~50% of available RAM
+          cpus: '24'     # 50% of available CPUs
