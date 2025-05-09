@@ -20,10 +20,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY *.py .
 COPY *.json .
 COPY *.md .
-COPY *.db* ./ 2>/dev/null || true
+COPY *.db* ./
 
-# Expose the ports
-EXPOSE 7860 11434
+# Expose the port for Gradio UI
+EXPOSE 7860
 
 # Create directory for database
 RUN mkdir -p /data
@@ -33,9 +33,6 @@ VOLUME /data
 ENV PYTHONUNBUFFERED=1
 ENV LLM_PROVIDER=ollama
 ENV OLLAMA_BASE_URL=http://localhost:11434
-
-# Download the Ollama model
-RUN ollama pull cas/ministral-8b-instruct-2410_q4km || echo "Model will be pulled at runtime"
 
 # Create startup script
 RUN echo '#!/bin/bash\n\
