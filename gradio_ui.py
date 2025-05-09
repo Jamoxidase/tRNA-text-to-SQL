@@ -163,7 +163,7 @@ class TRNARetrieverUI:
         embedding_file: str,
         ontology_file: str,
         db_path: str,
-        llm_provider: str = "litellm",
+        llm_provider: str = "ollama",
         ollama_url: str = "http://localhost:11434",
         ollama_model: str = "cas/ministral-8b-instruct-2410_q4km"
     ) -> Tuple[str, Dict, list, str]:
@@ -1275,7 +1275,7 @@ with gr.Blocks(css=css, title="tRNA Ontology Retriever") as app:
                 model_dropdown = gr.Dropdown(
                     choices=AVAILABLE_MODELS,
                     label="Select Models",
-                    value=["openai-gpt-4"],  # Using GPT-4 as default model
+                    value=["ollama:custom"],  # Using Ollama as default model
                     multiselect=True,
                     scale=1
                 )
@@ -1323,7 +1323,7 @@ with gr.Blocks(css=css, title="tRNA Ontology Retriever") as app:
                         llm_provider = gr.Radio(
                             label="LLM Provider",
                             choices=["litellm", "ollama"],
-                            value="litellm",
+                            value="ollama",
                             info="Select which LLM provider to use"
                         )
                         ollama_url = gr.Textbox(
@@ -1444,4 +1444,4 @@ if __name__ == "__main__":
         check_message_log(args.log_limit)
     else:
         # Launch the Gradio app
-        app.launch(share=True)
+        app.launch()#share=True)

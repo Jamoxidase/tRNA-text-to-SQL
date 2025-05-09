@@ -23,7 +23,7 @@ load_dotenv()
 LITELLM_API_KEY = os.getenv('LITELLM_API_KEY')
 LITELLM_BASE_URL = os.getenv('LITELLM_BASE_URL')
 OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
-LLM_PROVIDER = os.getenv('LLM_PROVIDER', 'litellm')  # Options: 'litellm', 'ollama'
+LLM_PROVIDER = os.getenv('LLM_PROVIDER', 'ollama')  # Options: 'litellm', 'ollama'
 
 # Database configuration
 DB_PATH = os.getenv('TRNA_DB_PATH', 'trna_db_v01.db')
