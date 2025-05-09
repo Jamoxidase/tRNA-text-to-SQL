@@ -16,8 +16,3 @@ services:
       - LLM_PROVIDER=ollama
       - OLLAMA_BASE_URL=http://localhost:11434
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 60G    # ~50% of available RAM
-          cpus: '24'     # 50% of available CPUs

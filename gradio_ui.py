@@ -1335,7 +1335,7 @@ with gr.Blocks(css=css, title="tRNA Ontology Retriever") as app:
                     with gr.Row():
                         ollama_model = gr.Textbox(
                             label="Ollama Model Name",
-                            value="cas/ministral-8b-instruct-2410_q4km",
+                            value="mistral-openorca",
                             info="Specify which Ollama model to use (must be installed via 'ollama pull <model>')"
                         )
 

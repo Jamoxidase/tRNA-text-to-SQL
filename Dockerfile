@@ -47,8 +47,12 @@ until curl -s http://localhost:11434/api/tags > /dev/null 2>&1; do\n\
   sleep 1\n\
 done\n\
 \n\
-# Pull the model if not already downloaded\n\
-ollama pull cas/ministral-8b-instruct-2410_q4km\n\
+# Pull and run the model to ensure it\'s fully loaded before accepting connections\n\
+echo "Pulling and loading mistral-openorca model..."\n\
+ollama pull mistral-openorca\n\
+echo "Warming up the model..."\n\
+ollama run mistral-openorca "hello" > /dev/null\n\
+echo "Model ready!"\n\
 \n\
 # Start the application (binding to all interfaces configured in the code)\n\
 python gradio_ui.py\n\
