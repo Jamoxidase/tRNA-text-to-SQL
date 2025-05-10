@@ -42,8 +42,10 @@ AVAILABLE_MODELS = [
     "flash-2",
     "sonar",
     "Ministral-8b",
-    # Ollama model
-    "ollama:mistral-openorca"
+    # Ollama models
+    "ollama:mistral-openorca",
+    "ollama:qwen2.5:3b",
+    "ollama:hf.co/QuantFactory/Ministral-3b-instruct-GGUF:Q4_K_M"
 ]
 
 def cosine_similarity(a, b):

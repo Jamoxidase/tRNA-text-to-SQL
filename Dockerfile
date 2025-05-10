@@ -46,12 +46,14 @@ until curl -s http://localhost:11434/api/tags > /dev/null 2>&1; do\n\
   sleep 1\n\
 done\n\
 \n\
-# Pull and run the model to ensure it\'s fully loaded before accepting connections\n\
-echo "Pulling and loading mistral-openorca model..."\n\
+# Pull and run the models to ensure they\'re fully loaded before accepting connections\n\
+echo "Pulling and loading models..."\n\
 ollama pull mistral-openorca\n\
-echo "Warming up the model..."\n\
+ollama pull qwen2.5:3b\n\
+ollama pull QuantFactory/Ministral-3b-instruct-GGUF:Q4_K_M\n\
+echo "Warming up the primary model..."\n\
 ollama run mistral-openorca "hello" > /dev/null\n\
-echo "Model ready!"\n\
+echo "Models ready!"\n\
 \n\
 # Start the application (binding to all interfaces configured in the code)\n\
 python gradio_ui.py\n\
